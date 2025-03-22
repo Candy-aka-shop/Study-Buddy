@@ -103,11 +103,11 @@
      ```
  
  3.  **Start the frontend development server:**
-     ```bash
-     npm start
+     ```powershell
+     $env:PORT=3001; npm start
      ```
-     The frontend React application should open in your web browser, typically at `http://localhost:3000` (or `http://localhost:3001` if port 3000 is already in use).
- 
+     The frontend React application should open in your web browser, typically at `http://localhost:3000` (or `http://localhost:3001` if port 3000 is already in use). Use powershell instead of cmd
+
  ### Database Setup
  
  1.  **Connect to PostgreSQL database** using `psql` client:
@@ -156,6 +156,7 @@
      *   **400 Bad Request:**  `{"error": "Missing required fields"}` (if name, email, password, academicYear are missing)
      *   **409 Conflict:** `{"error": "Email already registered"}` (if email is already in use)
      *   **500 Internal Server Error:** `{"error": "Error registering user", "details": "Database error details"}` (for backend server errors)
+ 
  ### User Login (POST /api/users/login)
  
  *   **Endpoint URL:** `/api/users/login`
