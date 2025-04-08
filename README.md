@@ -107,7 +107,7 @@
      $env:PORT=3001; npm start
      ```
      The frontend React application should open in your web browser, typically at `http://localhost:3000` (or `http://localhost:3001` if port 3000 is already in use). Use powershell instead of cmd
-
+ 
  ### Database Setup
  
  1.  **Connect to PostgreSQL database** using `psql` client:
