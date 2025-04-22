@@ -4,44 +4,44 @@
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 5px;
-}
-
-.register-form h2 {
+  }
+  
+  .register-form h2 {
     text-align: center;
     margin-bottom: 20px;
-}
-
-.register-form form {
+  }
+  
+  .register-form form {
     display: flex;
     flex-direction: column;
     gap: 15px;
-}
-
-.register-form label {
+  }
+  
+  .register-form label {
     margin-bottom: 5px;
-}
-
-.register-form input {
+  }
+  
+  .register-form input {
     padding: 8px;
     border-radius: 3px;
     border: 1px solid #ddd;
-}
-
-.register-form button[type="submit"] {
+  }
+  
+  .register-form button[type="submit"] {
     padding: 10px 15px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-}
-
-.register-form .success-message {
+  }
+  
+  .register-form .success-message {
     color: green;
     margin-top: 10px;
-}
-
-.register-form .error-message {
+  }
+  
+  .register-form .error-message {
     color: red;
     margin-top: 10px;
-}
+  }
