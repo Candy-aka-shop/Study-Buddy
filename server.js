@@ -328,6 +328,41 @@ app.post('/api/users/me/availability', authenticateToken, async (req, res) => {
   }
 });
 
+// **Availability API Endpoints - Add DELETE endpoint**
+
+// Delete User Availability Slot (DELETE /api/users/me/availability/:availabilityId) - Requires JWT Authentication
+app.delete('/api/users/me/availability/:availabilityId', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId; // User ID from JWT
+    const availabilityId = parseInt(req.params.availabilityId); // Extract availabilityId from path parameter
+
+    // 1. Validate availabilityId (basic integer check)
+    if (isNaN(availabilityId) || availabilityId <= 0) {
+      return res.status(400).json({ error: "Invalid availability ID" }); // 400 Bad Request
+    }
+
+    // 2. Check if availability slot exists and belongs to the current user
+    const existingSlotResult = await pool.query(
+      'SELECT availability_id FROM availability WHERE availability_id = $1 AND user_id = $2',
+      [availabilityId, userId]
+    );
+    if (existingSlotResult.rows.length === 0) {
+      return res.status(404).json({ error: "Availability slot not found or does not belong to you" }); // 404 Not Found or Unauthorized
+    }
+
+    // 3. Delete availability slot from database
+    await pool.query('DELETE FROM availability WHERE availability_id = $1', [availabilityId]);
+
+    // 4. Return success response (200 OK)
+    res.status(200).json({ message: "Availability slot deleted successfully", availabilityId: availabilityId });
+
+
+  } catch (error) {
+    console.error("Error deleting availability slot:", error);
+    res.status(500).json({ error: "Error deleting availability slot", details: error.message }); // 500 Internal Server Error
+  }
+});
+
 
 // Get User Availability (GET /api/users/me/availability) - Requires JWT Authentication
 app.get('/api/users/me/availability', authenticateToken, async (req, res) => {

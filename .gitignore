@@ -36,3 +36,4 @@ yarn-error.log*
 .pnp.js
 .cache/
 .git_backup/
+.DS_Store
