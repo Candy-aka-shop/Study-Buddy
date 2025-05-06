@@ -6,6 +6,7 @@ import LoginForm from './components/LoginForm'; // Import LoginForm
 import HomePage from './components/HomePage';
 import ProfilePage from './components/ProfilePage';
 import SuggestionsPage from './components/SuggestionsPage'; // **Import ProfilePage Component**
+import AvailabilityPage from './components/AvailabilityPage';
 import logo from './logo.svg';
 
 import './App.css';
@@ -23,6 +24,7 @@ function App() {
             <li><Link to="/login">Login</Link></li>  
             <li><Link to="/profile">Profile</Link></li>
             <li><Link to="/suggestions">Suggestions</Link></li>
+            <li><Link to="/availability">Availability</Link></li> 
              
           </ul>
         </nav>
@@ -33,6 +35,7 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/suggestions" element={<SuggestionsPage />} />
+        <Route path="/availability" element={<AvailabilityPage />} />
       </Routes>
     </div>
   );
