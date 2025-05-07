@@ -446,6 +446,51 @@ app.get('/api/messages', authenticateToken, async (req, res) => {
   }
 });
 
+// **User Course Enrollment API Endpoints**
+
+// Enroll User in Course (POST /api/users/me/courses) - Requires JWT Authentication
+app.post('/api/users/me/courses', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId; // Current user ID from JWT
+    const { courseId } = req.body; // Course ID to enroll in from request body
+
+    // 1. Input Validation
+    if (!courseId) {
+      return res.status(400).json({ error: "Missing courseId" }); // 400 Bad Request
+    }
+    if (isNaN(courseId) || courseId <= 0) {
+      return res.status(400).json({ error: "Invalid courseId format" }); // 400 Bad Request
+    }
+
+    // 2. Check if course exists
+    const courseCheckResult = await pool.query('SELECT course_id FROM courses WHERE course_id = $1', [courseId]);
+    if (courseCheckResult.rows.length === 0) {
+      return res.status(400).json({ error: "Course not found" }); // 400 Bad Request
+    }
+
+    // 3. Check if user is already enrolled in the course
+    const enrollmentCheckResult = await pool.query('SELECT * FROM user_courses WHERE user_id = $1 AND course_id = $2', [userId, courseId]);
+    if (enrollmentCheckResult.rows.length > 0) {
+      return res.status(409).json({ error: "Already enrolled in this course" }); // 409 Conflict
+    }
+
+    // 4. Insert enrollment record into user_courses table
+    const insertResult = await pool.query(
+      'INSERT INTO user_courses (user_id, course_id) VALUES ($1, $2) RETURNING user_course_id, user_id, course_id, created_at, updated_at',
+      [userId, courseId]
+    );
+
+    const newEnrollment = insertResult.rows[0];
+
+    // 5. Return success response (201 Created)
+    res.status(201).json({ message: "Successfully enrolled in course", enrollment: newEnrollment });
+
+
+  } catch (error) {
+    console.error("Error enrolling user in course:", error);
+    res.status(500).json({ error: "Error enrolling user in course", details: error.message }); // 500 Internal Server Error
+  }
+});
 
 
 // **Matching System API Endpoint**

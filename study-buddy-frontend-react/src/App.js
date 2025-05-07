@@ -6,7 +6,6 @@ import LoginForm from './components/LoginForm'; // Import LoginForm
 import HomePage from './components/HomePage';
 import ProfilePage from './components/ProfilePage';
 import SuggestionsPage from './components/SuggestionsPage'; // **Import ProfilePage Component**
-import CourseList from './components/CourseList'; // **Import CourseList Component**
 import logo from './logo.svg';
 
 import './App.css';
@@ -24,7 +23,6 @@ function App() {
             <li><Link to="/login">Login</Link></li>  
             <li><Link to="/profile">Profile</Link></li>
             <li><Link to="/suggestions">Suggestions</Link></li>
-            <li><Link to="/courses">Courses</Link></li> {/* **Navigation Link to Courses page** */}
              
           </ul>
         </nav>
@@ -35,7 +33,6 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/suggestions" element={<SuggestionsPage />} />
-        <Route path="/courses" element={<CourseList />} /> {/* **Route for Courses page** */}
       </Routes>
     </div>
   );
