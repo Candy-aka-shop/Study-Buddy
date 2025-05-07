@@ -6,10 +6,7 @@ import LoginForm from './components/LoginForm'; // Import LoginForm
 import HomePage from './components/HomePage';
 import ProfilePage from './components/ProfilePage';
 import SuggestionsPage from './components/SuggestionsPage'; // **Import ProfilePage Component**
-<<<<<<< HEAD
-import AvailabilityPage from './components/AvailabilityPage';
-=======
->>>>>>> e661013dcd82d5a92ebf9170e35700ede9dfc757
+import CourseList from './components/CourseList'; // **Import CourseList Component**
 import logo from './logo.svg';
 
 import './App.css';
@@ -27,10 +24,7 @@ function App() {
             <li><Link to="/login">Login</Link></li>  
             <li><Link to="/profile">Profile</Link></li>
             <li><Link to="/suggestions">Suggestions</Link></li>
-<<<<<<< HEAD
-            <li><Link to="/availability">Availability</Link></li> 
-=======
->>>>>>> e661013dcd82d5a92ebf9170e35700ede9dfc757
+            <li><Link to="/courses">Courses</Link></li> {/* **Navigation Link to Courses page** */}
              
           </ul>
         </nav>
@@ -41,10 +35,7 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/suggestions" element={<SuggestionsPage />} />
-<<<<<<< HEAD
-        <Route path="/availability" element={<AvailabilityPage />} />
-=======
->>>>>>> e661013dcd82d5a92ebf9170e35700ede9dfc757
+        <Route path="/courses" element={<CourseList />} /> {/* **Route for Courses page** */}
       </Routes>
     </div>
   );
