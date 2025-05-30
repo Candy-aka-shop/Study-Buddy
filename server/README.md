@@ -38,9 +38,11 @@ The Study Buddy web application is a platform designed to connect students with 
 ## 1. Technologies Used
 
 *   **Frontend:** React.js, JavaScript, HTML, CSS, Axios
-*   **Backend:** Node.js, Express.js, PostgreSQL, `pg` (node-postgres), `bcrypt`, `jsonwebtoken`, `cors`, `dotenv`
+*   **Backend:** Node.js, Express.js, PostgreSQL, `pg` (node-postgres), `bcrypt`, `jsonwebtoken`, `cors`, `dotenv`, Cloudinary
 *   **Database:** PostgreSQL
 *   **Development Environment:** VS Code, Docker (for PostgreSQL)
+
+Note: Cloudinary is used for image storage (e.g., profile pictures). Instead of storing image files directly in the database, I store Cloudinary-hosted image URLs as references.
 
 ## 2. Setup Instructions
 
@@ -55,7 +57,7 @@ Follow these instructions to set up the Study Buddy application for local develo
 
 1.  **Navigate to the backend directory:**
     ```bash
-    cd study-buddy-backend-v2  # Or your backend project directory name
+    cd study-buddy-backend-v2  # backend project directory name
     ```
 
 2.  **Install backend dependencies:**
@@ -550,5 +552,5 @@ This research probe and project implementation provides a solid foundation for t
 
 ## 6. Credits
 
-This Study Buddy Web Application project was developed by [**Jamilya**].
+This Study Buddy Web Application project was developed by [**Jamilya Mamelyanova**].
 
