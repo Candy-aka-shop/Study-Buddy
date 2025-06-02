@@ -58,7 +58,7 @@ REACT_APP_SOCKET_URL=your_socket_server_url
 ### Frontend  
 1. Install dependencies: `npm install`
 2. Set environment variables in `.env`
-3. Start development server: `npm start`
+3. Start development server: `npm run dev`
 
 ## Real-time Features
 
