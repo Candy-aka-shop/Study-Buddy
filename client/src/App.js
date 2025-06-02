@@ -2,18 +2,16 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import MainLayout from './layouts/MainLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const HomePage = lazy(() => import('./pages/Home'));
 const RegisterPage = lazy(() => import('./pages/Register'));
 const LoginPage = lazy(() => import('./pages/Login'));
 const ProfilePage = lazy(() => import('./pages/Profile'));
 const SuggestionsPage = lazy(() => import('./pages/Suggestions'));
-const CourseListPage = lazy(() => import('./pages/CourseList'));
-const AvailabilityPage = lazy(() => import('./pages/Availability'));
 const PreferencesPage = lazy(() => import('./pages/Preferences'));
-const SessionsPage = lazy(() => import('./pages/Sessions'));
-const ResourcesPage = lazy(() => import('./pages/Resources'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPassword'));
+const NewPassword = lazy(() => import('./pages/NewPassword'));
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmail'));
 const MessagesPage = lazy(() => import('./pages/Messages'));
 
@@ -35,16 +33,18 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/suggestions" element={<SuggestionsPage />} />
-          <Route path="/courses" element={<CourseListPage />} />
-          <Route path="/availability" element={<AvailabilityPage />} />
-          <Route path="/preferences" element={<PreferencesPage />} />
-          <Route path="/sessions" element={<SessionsPage />} />
-          <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/new-password" element={<NewPassword />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/suggestions" element={<SuggestionsPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/messages/:messageId" element={<MessagesPage />} />
+            <Route path="/chatroom" element={<MessagesPage />} />
+            <Route path="/chatroom/:chatRoomId" element={<MessagesPage />} />
+            <Route path="/preferences" element={<PreferencesPage />} />
+          </Route>
         </Route>
       </Routes>
     </Suspense>

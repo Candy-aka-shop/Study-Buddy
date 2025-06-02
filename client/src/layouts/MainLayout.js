@@ -1,18 +1,31 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const MainLayout = () => {
-  return (
-    <div className="flex flex-col min-h-screen bg-pure-white text-pure-black">
-      <Header />
-      <main className="">
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
-  );
-};
+    const location = useLocation();
+    const isChatroom = location.pathname.includes("chatroom") || location.pathname.includes("messages") ;
+    const isHome = location.pathname === '/' || location.pathname === '/register' || location.pathname === '/login'
 
-export default MainLayout;
+  
+    return (
+        <div className={`${isChatroom ? 'h-screen' : 'min-h-screen'} bg-pure-white text-pure-black`}>
+          {!isChatroom ? (
+              <>
+                <div className="fixed top-0 left-0 right-0 z-50">
+                  <Header />
+                </div>
+                <main className={!isHome && "px-2 sm:px-3 md:px-4"}> 
+                  <Outlet />
+                </main>
+                <Footer />
+              </>
+            ) : (
+                <Outlet />
+              )}
+            </div>
+          );
+        };
+        
+  export default MainLayout;

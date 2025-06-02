@@ -1,177 +1,269 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { User, ChevronDown, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useProfileStore, useAvailabilityStore, usePreferencesStore, useAuthStore, useMatchingStore } from '../stores';
-import { authApi } from '../utils/api';
+import { useAuthStore } from '../stores';
+import useProfileStore from '../stores/profile';
+import PasswordChange from '../components/Password';
+import { loadProfile, handleImageUpload, triggerFileInput, saveProfileChanges, navigateToMatches, navigateToPreferences } from '../utils/profileUtils';
+import { motion } from 'framer-motion';
 
 const ProfilePage = () => {
-  const { user, isAuthenticated, logout } = useAuthStore();
-  const { profile, fetchProfile, updateProfile } = useProfileStore();
-  const { availability, fetchAvailability } = useAvailabilityStore();
-  const { preferences, fetchPreferences, updatePreferences } = usePreferencesStore();
-  const { fetchMatches } = useMatchingStore();
+  const { user } = useAuthStore();
+  const { profile, isLoading, fetchProfile, updateProfile, setProfileField } = useProfileStore();
   const navigate = useNavigate();
+  const [coursesInput, setCoursesInput] = useState('');
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [academicYear, setAcademicYear] = useState('');
-  const [subjects, setSubjects] = useState('');
-  const [studyStyle, setStudyStyle] = useState('');
-  const [availabilityTime, setAvailabilityTime] = useState('');
+  const yearOptions = ['First Year', 'Second Year', 'Third Year', 'Final Year'];
+  const studyStyleOptions = ['Group', 'Individual', 'Mixed'];
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProfile();
-      fetchAvailability();
-      fetchPreferences();
-    }
-  }, [isAuthenticated, fetchProfile, fetchAvailability, fetchPreferences]);
+    loadProfile({ user, fetchProfile, navigate });
+  }, [user, fetchProfile, navigate]);
 
   useEffect(() => {
-    if (profile) {
-      setFirstName(profile.firstName || '');
-      setLastName(profile.lastName || '');
-      setAcademicYear(profile.academicYear || '');
-      setSubjects(profile.subjects?.join(', ') || '');
-      setStudyStyle(preferences?.studyStyle || '');
-      setAvailabilityTime(availability?.[0]?.startTime || '12:00pm');
-    }
-  }, [profile, preferences, availability]);
+    setCoursesInput(profile?.courses?.join(',') || '');
+  }, [profile?.courses]);
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    try {
-      await updateProfile({
-        firstName,
-        lastName,
-        academicYear,
-        subjects: subjects.split(',').map((s) => s.trim()),
-      });
-      await updatePreferences({ studyStyle });
-      await authApi.put('/availability', [{ dayOfWeek: 'Monday', startTime: availabilityTime, endTime: availabilityTime }]);
-      alert('Profile updated successfully');
-    } catch (error) {
-      console.error('Update error:', error);
-      alert('Failed to update profile');
+  const handleFieldChange = (field, value) => {
+    console.log(`Field: ${field}, Value:`, value);
+    if (field === 'courses') {
+      setCoursesInput(value);
+      setProfileField(field, value);
+    } else {
+      setProfileField(field, value);
     }
   };
 
-  const handleFindMatches = async () => {
-    await fetchMatches();
-    navigate('/suggestions');
+  const onImageChange = async (e) => {
+    await handleImageUpload(e.target.files[0], updateProfile);
   };
 
-  if (!isAuthenticated) {
-    return <div className="text-center text-pure-black">Please log in to view your profile.</div>;
-  }
+  const handleSave = () => {
+    saveProfileChanges(profile, yearOptions, updateProfile);
+  };
+
+  if (!profile) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-pure-white py-6 sm:py-8 md:py-12">
-      <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl mx-auto bg-pure-white rounded-lg shadow-md p-4 sm:p-6 md:p-8">
-        <img src="/logo.png" alt="Study Buddy Logo" className="mx-auto mb-4 w-24 sm:w-32" />
-        <div className="flex justify-between mb-4">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-pure-black">My Profile</h2>
-          <button
-            onClick={() => { logout(); navigate('/login'); }}
-            className="text-blue-500 hover:underline text-xs sm:text-sm"
+    <div className="min-h-screen pt-24 pb-4 bg-gray-50">
+      <div className="max-w-full mx-auto">
+        <div className="max-w-5xl mx-auto">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-2xl md:text-2xl font-semibold text-pure-black mb-6"
           >
-            Log Out
-          </button>
-        </div>
-        <form onSubmit={handleSave} className="space-y-3 sm:space-y-4 md:space-y-5">
-          <div>
-            <h3 className="text-lg font-semibold text-pure-black">Public Information</h3>
-            <label className="block text-xs sm:text-sm md:text-base font-medium text-pure-black">Username * (Cannot change)</label>
-            <input
-              type="text"
-              value={user?.username || ''}
-              disabled
-              className="w-full p-2 sm:p-3 border border-gray-300 rounded text-pure-black text-sm sm:text-base bg-gray-100"
-            />
-            <p className="text-xs text-gray-500">This username will be visible to all Study Buddy members</p>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-pure-black">Private Information</h3>
-            <label htmlFor="firstName" className="block text-xs sm:text-sm md:text-base font-medium text-pure-black">First Name *</label>
-            <input
-              type="text"
-              id="firstName"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="w-full p-2 sm:p-3 border border-gray-300 rounded text-pure-black text-sm sm:text-base"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="lastName" className="block text-xs sm:text-sm md:text-base font-medium text-pure-black">Last Name *</label>
-            <input
-              type="text"
-              id="lastName"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="w-full p-2 sm:p-3 border border-gray-300 rounded text-pure-black text-sm sm:text-base"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="academicYear" className="block text-xs sm:text-sm md:text-base font-medium text-pure-black">Academic Year *</label>
-            <input
-              type="text"
-              id="academicYear"
-              value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
-              className="w-full p-2 sm:p-3 border border-gray-300 rounded text-pure-black text-sm sm:text-base"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="subjects" className="block text-xs sm:text-sm md:text-base font-medium text-pure-black">Subjects/Courses</label>
-            <input
-              type="text"
-              id="subjects"
-              value={subjects}
-              onChange={(e) => setSubjects(e.target.value)}
-              className="w-full p-2 sm:p-3 border border-gray-300 rounded text-pure-black text-sm sm:text-base"
-              placeholder="e.g., Biology, Math"
-            />
-          </div>
-          <div>
-            <label htmlFor="studyStyle" className="block text-xs sm:text-sm md:text-base font-medium text-pure-black">Study Style</label>
-            <select
-              id="studyStyle"
-              value={studyStyle}
-              onChange={(e) => setStudyStyle(e.target.value)}
-              className="w-full p-2 sm:p-3 border border-gray-300 rounded text-pure-black text-sm sm:text-base"
+            My Profile
+          </motion.h1>
+
+          {isLoading && (
+            <div className="flex justify-center items-center mb-6">
+              <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+            </div>
+          )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"
+          >
+            <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm">
+              <h2 className="text-lg sm:text-xl font-semibold text-pure-black mb-4">
+                Public Information
+              </h2>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-pure-black">
+                  Username (Cannot be changed)
+                </label>
+                <p className="text-xs text-gray-600 mb-2">
+                  This username is visible to all Study Buddy members
+                </p>
+                <input
+                  type="text"
+                  value={profile.username || ''}
+                  disabled
+                  className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-pure-black font-medium cursor-not-allowed focus:outline-none"
+                  aria-label="Username"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <h2 className="text-lg sm:text-xl font-semibold text-pure-black mb-4">
+                Avatar
+              </h2>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 border-2 border-gray-300 flex items-center justify-center rounded-full">
+                  {profile.isUploading ? (
+                    <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+                  ) : profile.profilePicture ? (
+                    <img src={profile.profilePicture} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    <User className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+                  )}
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => triggerFileInput(onImageChange)}
+                  className="px-4 py-2 bg-gray-200 text-pure-black rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                  disabled={isLoading || profile.isUploading}
+                >
+                  {profile.isUploading ? 'Uploading...' : 'Change'}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-white rounded-xl p-6 mb-8 shadow-sm"
+          >
+            <h2 className="text-lg sm:text-xl font-semibold text-pure-black mb-4">
+              Private Information
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-pure-black">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  value={profile.firstName || ''}
+                  onChange={(e) => handleFieldChange('firstName', e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-pure-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-pure-black">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={profile.lastName || ''}
+                  onChange={(e) => handleFieldChange('lastName', e.target.value)}
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-pure-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-pure-black">
+                  Academic Year
+                </label>
+                <div className="relative">
+                  <select
+                    value={profile.academicYear || ''}
+                    onChange={(e) => handleFieldChange('academicYear', e.target.value)}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-pure-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    disabled={isLoading}
+                  >
+                    <option value="">Select Year</option>
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-pure-black">
+                  Courses
+                </label>
+                <input
+                  type="text"
+                  defaultValue={coursesInput || ''}
+                  onChange={(e) => handleFieldChange('courses', e.target.value)}
+                  placeholder="e.g., Biology,Chemistry,Physics"
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-pure-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-pure-black">
+                  Preferences
+                </label>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigateToPreferences(profile.hasUnsavedChanges, navigate)}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isLoading || profile.hasUnsavedChanges}
+                >
+                  Manage Preferences & Availability
+                </motion.button>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-pure-black">
+                  Study Style
+                </label>
+                <div className="relative">
+                  <select
+                    value={profile.studyStyle || ''}
+                    onChange={(e) => handleFieldChange('studyStyle', e.target.value)}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-pure-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    disabled={isLoading}
+                  >
+                    <option value="">Select Study Style</option>
+                    {studyStyleOptions.map((style) => (
+                      <option key={style} value={style.toLowerCase()}>{style}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center pb-5"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSave}
+              className="px-6 py-2 bg-gray-200 text-pure-black rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+              disabled={isLoading}
             >
-              <option value="">Select...</option>
-              <option value="Group">Group</option>
-              <option value="Individual">Individual</option>
-              <option value="Mixed">Mixed</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="availability" className="block text-xs sm:text-sm md:text-base font-medium text-pure-black">Availability</label>
-            <input
-              type="time"
-              id="availability"
-              value={availabilityTime}
-              onChange={(e) => setAvailabilityTime(e.target.value)}
-              className="w-full p-2 sm:p-3 border border-gray-300 rounded text-pure-black text-sm sm:text-base"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-light-blue text-pure-black p-2 sm:p-3 rounded hover:bg-blue-200 text-sm sm:text-base md:text-lg font-semibold transition"
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 inline-block animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Profile'
+              )}
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigateToMatches(profile.hasUnsavedChanges, navigate)}
+              className="px-6 py-2 bg-gray-200 text-pure-black rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+              disabled={isLoading || profile.hasUnsavedChanges}
+            >
+              Find Matches
+            </motion.button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="bg-white rounded-xl p-6 mb-8 shadow-sm"
           >
-            Save Changes
-          </button>
-          <button
-            type="button"
-            onClick={handleFindMatches}
-            className="w-full bg-blue-500 text-pure-white p-2 sm:p-3 rounded hover:bg-blue-600 text-sm sm:text-base md:text-lg font-semibold transition mt-2"
-          >
-            Find Matches
-          </button>
-        </form>
+            <h2 className="text-lg sm:text-xl font-semibold text-pure-black mb-4">
+              Password
+            </h2>
+            <PasswordChange />
+          </motion.div>
+        </div>
       </div>
     </div>
   );

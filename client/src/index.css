@@ -8,7 +8,6 @@
   padding: 0;
   margin: 0;
   outline: none;
-  border: 0;
   box-sizing: border-box;
 }
 body {
@@ -16,4 +15,17 @@ body {
 }
 .logo{
   font-family: "WDXL Lubrifont TC", sans-serif;
+}
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.chat-content {
+  transform: translateX(0);
+  animation: slide-in 0.3s ease-in-out;
 }
