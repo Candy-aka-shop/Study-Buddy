@@ -30,11 +30,19 @@ router.post('/register', validate(schemas.register), async (req, res) => {
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email?email=${encodeURIComponent(email)}&token=${verificationToken}`;
     const userId = uuidv4();
 
+    const capitalizeFirstLetter = (str) => {
+      const trimmed = str.trim();
+      return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase() : '';
+    };
+
+    const capitalizedFirstName = capitalizeFirstLetter(firstName);
+    const capitalizedLastName = capitalizeFirstLetter(lastName);
+
     const insertUser = await pool.query(
       `INSERT INTO users (user_id, email, password_hash, username, first_name, last_name, is_verified)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING user_id, email, username, first_name, last_name, is_verified`,
-      [userId, email.toLowerCase(), hashedPassword, username.toLowerCase(), firstName.toLowerCase(), lastName.toLowerCase(), false]
+      [userId, email.toLowerCase(), hashedPassword, username.toLowerCase(), capitalizedFirstName, capitalizedLastName, false]
     );
 
     await sendVerificationEmail(email, verificationLink);
@@ -210,6 +218,78 @@ router.post('/refresh-token', async (req, res) => {
   } catch (error) {
     console.error('Refresh error:', error);
     res.status(500).json({ error: 'An error occurred while refreshing token' });
+  }
+});
+
+router.post('/request-password-reset', async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) return res.status(400).json({ message: 'Email or username required' });
+
+    const result = await pool.query(
+      'SELECT user_id, email FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1)',
+      [identifier]
+    );
+    const user = result.rows[0];
+
+    if (!user) return res.status(403).json({ message: 'If the account exists, a reset link has been sent to the associated email' });
+
+    const resetToken = jwt.sign(
+      { userId: user.user_id },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    await sendVerificationEmail(user.email, resetLink);
+
+    res.status(200).json({ message: 'If the account exists, a reset link has been sent to the associated email' });
+  } catch (error) {
+    console.error('Request password reset error:', error);
+    res.status(500).json({ message: 'An error occurred while processing your request' });
+  }
+});
+
+router.get('/reset-password', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ message: 'Reset token required' });
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
+      }
+      res.status(200).json({ message: 'Token is valid', token });
+    });
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    res.status(500).json({ message: 'An error occurred while verifying the token' });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE user_id = $2', [hashedPassword, decoded.userId]);
+
+    await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [decoded.userId]);
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'An error occurred while resetting password' });
   }
 });
 

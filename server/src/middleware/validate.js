@@ -16,6 +16,7 @@ const schemas = {
     firstName: Joi.string().max(50).optional(),
     lastName: Joi.string().max(50).optional(),
     email: Joi.string().email().max(100).optional(),
+    oldPassword: Joi.string().min(6).optional(),
     password: Joi.string().min(6).optional(),
     username: Joi.string().min(3).max(100).optional(),
     academicYear: Joi.string().valid('first year', 'second year', 'third year', 'final year').optional(),
@@ -76,12 +77,18 @@ const schemas = {
     rating: Joi.number().integer().min(1).max(5).required(),
     comment: Joi.string().allow(''),
   }),
+    requestPasswordReset: Joi.object({
+    identifier: Joi.string().required(),
+  }),
+  resetPassword: Joi.object({
+    token: Joi.string().required(),
+    newPassword: Joi.string().min(6).required(),
+  }),
 };
 
 const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {
-    console.error('Validation error:', error.details);
     return res.status(400).json({ error: 'Invalid input provided', details: error.details });
   }
   next();

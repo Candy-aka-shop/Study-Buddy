@@ -4,15 +4,15 @@ async function initializeDatabase() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // await client.query(`
-    //   DROP TABLE IF EXISTS suggestions CASCADE;
-    //   DROP TABLE IF EXISTS messages CASCADE;
-    //   DROP TABLE IF EXISTS chat_room_participants CASCADE;
-    //   DROP TABLE IF EXISTS chat_rooms CASCADE;
-    //   DROP TABLE IF EXISTS refresh_tokens CASCADE;
-    //   DROP TABLE IF EXISTS files CASCADE;
-    //   DROP TABLE IF EXISTS users CASCADE;
-    // `);
+    await client.query(`
+      DROP TABLE IF EXISTS suggestions CASCADE;
+      DROP TABLE IF EXISTS messages CASCADE;
+      DROP TABLE IF EXISTS chat_room_participants CASCADE;
+      DROP TABLE IF EXISTS chat_rooms CASCADE;
+      DROP TABLE IF EXISTS refresh_tokens CASCADE;
+      DROP TABLE IF EXISTS files CASCADE;
+      DROP TABLE IF EXISTS users CASCADE;
+    `);
     await client.query(`
       CREATE TABLE users (
         user_id UUID PRIMARY KEY,
@@ -41,6 +41,16 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT refresh_tokens_user_id_key UNIQUE (user_id)
+      );
+    `);
+    await client.query(`
+      CREATE TABLE password_reset_tokens (
+        token_id UUID PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+        reset_token TEXT NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (user_id)
       );
     `);
     await client.query(`
@@ -97,6 +107,24 @@ async function initializeDatabase() {
         UNIQUE(user_id, suggested_user_id)
       );
     `);
+    await client.query(`
+      CREATE OR REPLACE FUNCTION check_direct_room_participants()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        IF (SELECT is_direct FROM chat_rooms WHERE chat_room_id = NEW.chat_room_id) THEN
+          IF (SELECT COUNT(*) FROM chat_room_participants WHERE chat_room_id = NEW.chat_room_id) != 2 THEN
+            RAISE EXCEPTION 'Direct rooms must have exactly two participants';
+          END IF;
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`
+      CREATE TRIGGER enforce_direct_room_participants
+      AFTER INSERT OR UPDATE ON chat_room_participants
+      FOR EACH ROW EXECUTE FUNCTION check_direct_room_participants();
+    `);
     await client.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);');
@@ -104,6 +132,7 @@ async function initializeDatabase() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_suggestions_user_id ON suggestions(user_id);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_chat_room_participants_chat_room_id ON chat_room_participants(chat_room_id);');
     await client.query('CREATE INDEX IF NOT EXISTS idx_chat_room_participants_user_id ON chat_room_participants(user_id);');
     await client.query('COMMIT');

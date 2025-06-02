@@ -29,7 +29,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 
 router.patch('/me', authenticateToken, validate(schemas.updateProfile), async (req, res) => {
   try {
-    const { firstName, lastName, email, password, username, academicYear, profilePicture, courses, studyStyle, availableDays } = req.body;
+    const { firstName, lastName, email, password, oldPassword, username, academicYear, profilePicture, courses, studyStyle, availableDays } = req.body;
     const validYears = ['first year', 'second year', 'third year', 'final year'];
     const validStudyStyles = ['group', 'individual', 'mixed'];
 
@@ -52,8 +52,30 @@ router.patch('/me', authenticateToken, validate(schemas.updateProfile), async (r
     }
 
     const updates = [];
-    const values = [req.user.userId]; 
+    const values = [req.user.userId];
     let valueIndex = 2;
+
+    if (password !== undefined) {
+      if (!oldPassword) {
+        return res.status(400).json({ error: 'Current password is required to set a new password' });
+      }
+      const userResult = await pool.query(
+        'SELECT password_hash FROM users WHERE user_id = $1',
+        [req.user.userId]
+      );
+      if (!userResult.rows[0]) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const isValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
+      if (!isValid) {
+        return res.status(403).json({ error: 'Your password is incorrect' });
+      }
+      const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+      updates.push(`password_hash = $${valueIndex}`);
+      values.push(hashedPassword);
+      valueIndex++;
+    }
 
     if (firstName !== undefined) {
       updates.push(`first_name = $${valueIndex}`);
@@ -68,12 +90,6 @@ router.patch('/me', authenticateToken, validate(schemas.updateProfile), async (r
     if (email !== undefined) {
       updates.push(`email = $${valueIndex}`);
       values.push(email ? email.toLowerCase() : null);
-      valueIndex++;
-    }
-    if (password !== undefined) {
-      const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
-      updates.push(`password_hash = $${valueIndex}`);
-      values.push(hashedPassword);
       valueIndex++;
     }
     if (username !== undefined) {
@@ -114,7 +130,7 @@ router.patch('/me', authenticateToken, validate(schemas.updateProfile), async (r
     if (availableDays !== undefined) {
       if (Array.isArray(availableDays)) {
         updates.push(`available_days = $${valueIndex}`);
-        values.push(JSON.stringify(availableDays)); 
+        values.push(JSON.stringify(availableDays));
         valueIndex++;
       } else {
         return res.status(400).json({ error: 'Available days must be an array' });

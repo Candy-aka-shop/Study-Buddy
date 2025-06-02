@@ -1,7 +1,7 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-async function sendVerificationEmail(to, verificationLink) {
+async function sendVerificationEmail(to, verificationLink, title = 'Verify your email', description = 'Click the link below to verify your email:') {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -13,10 +13,10 @@ async function sendVerificationEmail(to, verificationLink) {
   const mailOptions = {
     from: `"Noble Auth" <${process.env.EMAIL_USER}>`,
     to,
-    subject: 'Verify your email',
+    subject: title,
     html: `
-      <h2>Verify your email</h2>
-      <p>Click the link below to verify your email:</p>
+      <h2>${title}</h2>
+      <p>${description}</p>
       <a href="${verificationLink}">Verify Email</a>
     `,
   };
